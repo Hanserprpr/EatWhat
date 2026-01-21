@@ -1,8 +1,11 @@
 package you.v50to.eatwhat.service;
 
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -13,13 +16,16 @@ import java.util.HexFormat;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.springframework.web.client.ResourceAccessException;
 import work.foofish.smsverify.SmsTemplate;
 import work.foofish.smsverify.config.AliyunDefaultRequest;
 import work.foofish.smsverify.core.SmsRequest;
 import work.foofish.smsverify.core.SmsResponse;
+import you.v50to.eatwhat.data.enums.BizCode;
 
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 public class SmsService {
 
@@ -69,7 +75,7 @@ public class SmsService {
         // 同手机号发送频率限制：60秒一次
         Boolean ok = redis.opsForValue().setIfAbsent(limitKey, "1", SEND_LIMIT_TTL);
         if (ok == null || !ok) {
-            throw new BizException("请求过于频繁，请稍后再试");
+            throw new BizException(BizCode.TOO_MANY_REQUESTS, "请求过于频繁，请稍后再试");
         }
 
         String code = gen6Digits();
@@ -82,19 +88,40 @@ public class SmsService {
                 case "bind" -> AliyunDefaultRequest.bind(mobile, code, String.valueOf(CODE_TTL.toMinutes()));
                 case "verifybind", "verify_bind" ->
                         AliyunDefaultRequest.verifyBind(mobile, code, String.valueOf(CODE_TTL.toMinutes()));
-                default -> throw new BizException("不支持的验证码用途(scene): " + scene);
+                default -> throw new BizException(BizCode.PARAM_INVALID, "不支持的验证码用途(scene): " + scene);
             };
-            SmsResponse resp = smsTemplate.send(request);
+            SmsResponse resp = null;
+
+            try {
+                resp = smsTemplate.send(request);
+            } catch (ResourceAccessException e) {
+                if (e.getCause() instanceof SocketTimeoutException) {
+                    throw new BizException(
+                            BizCode.THIRD_PARTY_TIMEOUT,
+                            "短信服务请求超时"
+                    );
+                }
+                log.error("短信服务访问异常", e);
+                throw new BizException(
+                        BizCode.THIRD_PARTY_UNAVAILABLE,
+                        "短信服务不可用"
+                );
+            }
 
             if (resp == null || !resp.isSuccess()) {
-                throw new BizException("短信发送失败：" + (resp == null ? "null response" : resp.getErrorMessage()));
+                log.warn(
+                        "短信发送失败，resp={}",
+                        resp == null ? "null" : resp
+                );
+                throw new BizException(BizCode.THIRD_PARTY_BAD_RESPONSE, "短信发送失败：" + (resp == null ? "null response" : resp.getErrorMessage()));
             }
         } catch (RuntimeException e) {
             redis.delete(limitKey);
             throw e;
         } catch (Exception e) {
             redis.delete(limitKey);
-            throw new BizException("短信发送异常：" + e.getMessage(), e);
+            log.error("短信发送异常：{}", e.getMessage(), e);
+            throw new BizException(BizCode.UNKNOWN_ERROR, "短信发送异常：" + e.getMessage());
         }
 
         String codeKey = keyCode(scene, mobile);
@@ -109,7 +136,7 @@ public class SmsService {
         validate(scene, mobile);
 
         if (inputCode == null || inputCode.isBlank()) {
-            throw new BizException("验证码不能为空");
+            throw new BizException(BizCode.PARAM_MISSING, "验证码不能为空");
         }
 
         String codeKey = keyCode(scene, mobile);
@@ -117,12 +144,12 @@ public class SmsService {
 
         String stored = redis.opsForValue().get(codeKey);
         if (stored == null) {
-            throw new BizException("验证码已过期或不存在");
+            throw new BizException(BizCode.PARAM_INVALID, "验证码已过期或不存在");
         }
 
         int fails = parseInt(redis.opsForValue().get(cntKey)).orElse(0);
         if (fails >= MAX_VERIFY_FAILS) {
-            throw new BizException("验证码错误次数过多，请稍后再试");
+            throw new BizException(BizCode.TOO_MANY_REQUESTS, "验证码错误次数过多，请稍后再试");
         }
 
         boolean match;
@@ -138,9 +165,9 @@ public class SmsService {
             redis.expire(cntKey, CODE_TTL.toSeconds(), TimeUnit.SECONDS);
 
             if (newFails >= MAX_VERIFY_FAILS) {
-                throw new BizException("验证码错误次数过多，请稍后再试");
+                throw new BizException(BizCode.TOO_MANY_REQUESTS, "验证码错误次数过多，请稍后再试");
             }
-            throw new BizException("验证码错误");
+            throw new BizException(BizCode.VERIFY_CODE_ERROR);
         }
 
         redis.delete(codeKey);
@@ -156,7 +183,7 @@ public class SmsService {
             redis.expire(ipKey, IP_LIMIT_TTL.toSeconds(), TimeUnit.SECONDS);
         }
         if (cnt != null && cnt > IP_LIMIT_MAX) {
-            throw new BizException("请求过于频繁，请稍后再试");
+            throw new BizException(BizCode.TOO_MANY_REQUESTS, "请求过于频繁，请稍后再试");
         }
     }
 
@@ -167,14 +194,13 @@ public class SmsService {
 
     private static void validate(String scene, String mobile) {
         if (scene == null || scene.isBlank()) {
-            throw new BizException("scene不能为空");
+            throw new BizException(BizCode.PARAM_MISSING, "scene不能为空");
         }
         if (mobile == null || mobile.isBlank()) {
-            throw new BizException("手机号不能为空");
+            throw new BizException(BizCode.PARAM_MISSING, "手机号不能为空");
         }
-        // 简单校验（可按你需要替换更严格的手机号正则）
         if (mobile.length() < 6 || mobile.length() > 20) {
-            throw new BizException("手机号格式不正确");
+            throw new BizException(BizCode.PARAM_INVALID, "手机号格式不正确");
         }
     }
 
@@ -211,19 +237,31 @@ public class SmsService {
             byte[] dig = md.digest(raw.getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(dig);
         } catch (Exception e) {
-            throw new BizException("hash失败：" + e.getMessage(), e);
+            log.error(e.getMessage(), e);
+            throw new BizException(BizCode.SYSTEM_ERROR);
         }
     }
 
 
+    @Getter
     public static class BizException extends RuntimeException {
-        public BizException(String message) {
-            super(message);
+        private final BizCode bizCode;
+
+        public BizException(BizCode bizCode) {
+            super(bizCode.getMsg());
+            this.bizCode = bizCode;
         }
 
-        public BizException(String message, Throwable cause) {
-            super(message, cause);
+        public BizException(BizCode bizCode, String extraMsg) {
+            super(bizCode.getMsg() + "：" + extraMsg);
+            this.bizCode = bizCode;
         }
+
+        public BizException(BizCode bizCode, Throwable cause) {
+            super(bizCode.getMsg(), cause);
+            this.bizCode = bizCode;
+        }
+
     }
 
     private void applyGlobalLimit(String scene) {
@@ -235,7 +273,12 @@ public class SmsService {
             redis.expire(key, GLOBAL_WINDOW_SECONDS, TimeUnit.SECONDS);
         }
         if (cnt != null && cnt > GLOBAL_MAX_PER_MIN) {
-            throw new BizException("系统繁忙，请稍后再试");
+            log.warn(
+                    "达到全局速率限制，scene={}, cnt={}, max={}",
+                    scene, cnt, GLOBAL_MAX_PER_MIN
+            );
+
+            throw new BizException(BizCode.TOO_MANY_REQUESTS, "短信发送过于频繁");
         }
     }
 }

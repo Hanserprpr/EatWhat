@@ -3,30 +3,32 @@ package you.v50to.eatwhat.data.vo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import you.v50to.eatwhat.data.enums.BizCode;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Result {
+public class Result<T> {
 
     private Integer code; // 业务状态码
-    private Object data;  // 数据
+    private T data;       // 数据
     private String msg;   // 提示信息
 
-    public static Result ok() {
-        return new Result(200, null, "ok");
+    public static <T> Result<T> ok() {
+        return new Result<>(BizCode.SUCCESS.getCode(), null, BizCode.SUCCESS.getMsg());
     }
 
-    public static Result ok(Object data) {
-        return new Result(200, data, "ok");
+    public static <T> Result<T> ok(T data) {
+        return new Result<>(BizCode.SUCCESS.getCode(), data, BizCode.SUCCESS.getMsg());
     }
 
-    public static Result fail(String msg) {
-        return new Result(400, null, msg);
+    public static <T> Result<T> fail(BizCode bizCode) {
+        return new Result<>(bizCode.getCode(), null, bizCode.getMsg());
     }
 
-    public static Result fail(int code, String msg) {
-        return new Result(code, null, msg);
+    public static <T> Result<T> fail(BizCode bizCode, String extraMsg) {
+        // 追加信息：适合携带更具体的原因（例如字段名、上下文）
+        return new Result<>(bizCode.getCode(), null, bizCode.getMsg() + "：" + extraMsg);
     }
 
 }
