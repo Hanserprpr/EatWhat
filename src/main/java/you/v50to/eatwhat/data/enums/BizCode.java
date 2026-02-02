@@ -25,6 +25,10 @@ public enum BizCode {
     USERNAME_EXISTS(30003, "用户名已存在"),
     PASSWORD_ERROR(30004, "密码错误"),
     VERIFY_CODE_ERROR(30005, "验证码错误"),
+    EMAIL_ALREADY_VERIFIED(30006, "该用户已通过邮箱验证"),
+    EMAIL_INVALID(30007, "邮箱格式不正确"),
+    EMAIL_TOKEN_INVALID(30008, "邮箱验证链接无效或已过期"),
+    EMAIL_NOT_SDU(30009, "仅支持山东大学邮箱（@sdu.edu.cn 或 @mail.sdu.edu.cn）"),
 
     // 4xxxx 业务逻辑错误
     OP_FAILED(40001, "操作失败"),

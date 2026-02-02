@@ -3,6 +3,7 @@ package you.v50to.eatwhat.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.SaTokenInfo;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +12,7 @@ import you.v50to.eatwhat.data.dto.RegisterDTO;
 import you.v50to.eatwhat.data.enums.BizCode;
 import you.v50to.eatwhat.data.vo.Result;
 import you.v50to.eatwhat.service.AuthService;
+import you.v50to.eatwhat.utils.IpUtil;
 import jakarta.validation.Valid;
 
 @CrossOrigin
@@ -64,6 +66,31 @@ public class AuthController {
     @RequestMapping("/callback")
     public Result<Void> callback(@RequestParam String token, HttpServletResponse response) {
         return authService.callBack(token);
+    }
+
+    /**
+     *发送验证链接
+     *
+     * @param email 邮箱地址
+     * @return 是否发送成功
+     * 发送一个链接 点击绑定
+     */
+    @SaCheckLogin
+    @GetMapping("/sendEmail")
+    public Result<Void> sendEmail(@RequestParam String email, HttpServletRequest request) {
+        String clientIp = IpUtil.getClientIp(request);
+        return authService.sendEmail(email, clientIp);
+    }
+
+    /**
+     * 验证邮箱链接
+     *
+     * @param token 验证token
+     * @return 验证结果
+     */
+    @GetMapping("/verifyEmail")
+    public Result<Void> verifyEmail(@RequestParam String token) {
+        return authService.verifyEmail(token);
     }
 }
 

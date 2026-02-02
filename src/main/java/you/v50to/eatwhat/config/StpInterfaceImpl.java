@@ -22,7 +22,7 @@ public class StpInterfaceImpl implements StpInterface {
     @Resource
     private StringRedisTemplate redis;
 
-    private static final Duration TTL = Duration.ofMinutes(20);
+    public static final Duration TTL = Duration.ofMinutes(20);
 
     /**
      * 返回一个账号所拥有的权限码集合

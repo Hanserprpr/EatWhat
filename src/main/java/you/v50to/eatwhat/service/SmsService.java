@@ -22,6 +22,7 @@ import work.foofish.smsverify.config.AliyunDefaultRequest;
 import work.foofish.smsverify.core.SmsRequest;
 import work.foofish.smsverify.core.SmsResponse;
 import you.v50to.eatwhat.data.enums.BizCode;
+import you.v50to.eatwhat.exception.BizException;
 
 import java.util.concurrent.TimeUnit;
 
@@ -241,29 +242,6 @@ public class SmsService {
             throw new BizException(BizCode.SYSTEM_ERROR);
         }
     }
-
-
-    @Getter
-    public static class BizException extends RuntimeException {
-        private final BizCode bizCode;
-
-        public BizException(BizCode bizCode) {
-            super(bizCode.getMsg());
-            this.bizCode = bizCode;
-        }
-
-        public BizException(BizCode bizCode, String extraMsg) {
-            super(bizCode.getMsg() + "：" + extraMsg);
-            this.bizCode = bizCode;
-        }
-
-        public BizException(BizCode bizCode, Throwable cause) {
-            super(bizCode.getMsg(), cause);
-            this.bizCode = bizCode;
-        }
-
-    }
-
     private void applyGlobalLimit(String scene) {
         String minute = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmm"));
         String key = "sms:global:" + scene + ":m:" + minute;

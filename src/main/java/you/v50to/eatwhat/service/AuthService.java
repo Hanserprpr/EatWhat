@@ -4,8 +4,10 @@ import cn.dev33.satoken.stp.SaTokenInfo;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import you.v50to.eatwhat.config.StpInterfaceImpl;
 import you.v50to.eatwhat.data.dto.LoginDTO;
 import you.v50to.eatwhat.data.dto.RegisterDTO;
 import you.v50to.eatwhat.data.enums.BizCode;
@@ -33,6 +35,10 @@ public class AuthService {
     private PasswordEncoder passwordEncoder;
     @Resource
     private ContactMapper contactMapper;
+    @Resource
+    private EmailService emailService;
+    @Resource
+    private StringRedisTemplate redis;
 
     private boolean usernameExists(String username) {
         return userMapper.exists(new LambdaQueryWrapper<User>()
@@ -117,7 +123,7 @@ public class AuthService {
 
     public Result<Void> callBack(String token) {
         String key = ""; // TODO: 添加key
-        Long userId = (Long) StpUtil.getLoginId();
+        Long userId = StpUtil.getLoginIdAsLong();
         Optional<JwtUtil.User> userOpt = JwtUtil.getClaim(token, key);
 
         if (userOpt.isEmpty()) {
@@ -133,8 +139,81 @@ public class AuthService {
             v.setRealName(name);
             v.setStudentId(casID);
             verificationMapper.insert(v);
+            String redisKey = "auth:" + userId;
+            redis.opsForValue().set(redisKey, "sso");
+            redis.expire(redisKey, StpInterfaceImpl.TTL);
             //response.sendRedirect(CasPageLogin.DEFAULT_FORWARD + "?casId=" + casID + "&name=" + name);
             return null;
+        }
+    }
+
+    public Result<Void> sendEmail(String email, String clientIp) {
+        Long userId = StpUtil.getLoginIdAsLong();
+
+        // 检查该用户是否已经通过邮箱验证
+        Verification existingVerification = verificationMapper.selectOne(
+                new LambdaQueryWrapper<Verification>()
+                        .eq(Verification::getAccountId, userId)
+                        .eq(Verification::getVerified, true)
+        );
+
+        if (existingVerification != null) {
+            return Result.fail(BizCode.EMAIL_ALREADY_VERIFIED);
+        }
+
+        try {
+            emailService.sendVerificationLink(email, userId, clientIp, EmailService.EmailPurpose.VERIFICATION);
+            return Result.ok();
+        } catch (you.v50to.eatwhat.exception.BizException e) {
+            return Result.fail(e.getBizCode());
+        }
+    }
+
+    public Result<Void> verifyEmail(String token) {
+        try {
+            EmailService.EmailVerification verification = emailService.verifyToken(token);
+            Long userId = verification.userId();
+            String email = verification.email();
+
+            // 检查该用户是否已经通过验证
+            Verification existingVerification = verificationMapper.selectOne(
+                    new LambdaQueryWrapper<Verification>()
+                            .eq(Verification::getAccountId, userId)
+                            .eq(Verification::getVerified, true)
+            );
+
+            if (existingVerification != null) {
+                return Result.fail(BizCode.EMAIL_ALREADY_VERIFIED);
+            }
+
+            Verification v = verificationMapper.selectOne(
+                    new LambdaQueryWrapper<Verification>()
+                            .eq(Verification::getAccountId, userId)
+            );
+
+            if (v == null) {
+                // 创建新的验证记录
+                v = new Verification();
+                v.setAccountId(userId);
+                v.setMethod("school_email");
+                v.setVerified(true);
+                v.setVerifiedEmail(email);
+                verificationMapper.insert(v);
+                redis.opsForValue().set("auth:" + userId, "school_email", StpInterfaceImpl.TTL);
+            } else {
+                // 更新验证记录
+                v.setMethod("school_email");
+                v.setVerified(true);
+                v.setVerifiedEmail(email);
+                v.setStudentId(null);
+                v.setRealName(null);
+                verificationMapper.updateById(v);
+                redis.opsForValue().set("auth:" + userId, "school_email", StpInterfaceImpl.TTL);
+            }
+
+            return Result.ok();
+        } catch (you.v50to.eatwhat.exception.BizException e) {
+            return Result.fail(e.getBizCode());
         }
     }
 }

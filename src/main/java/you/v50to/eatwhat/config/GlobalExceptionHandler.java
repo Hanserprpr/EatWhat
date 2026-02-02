@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import you.v50to.eatwhat.data.enums.BizCode;
 import you.v50to.eatwhat.data.vo.Result;
-import you.v50to.eatwhat.service.SmsService;
+import you.v50to.eatwhat.exception.BizException;
 
 import java.util.Objects;
 
@@ -22,8 +22,11 @@ public class GlobalExceptionHandler {
         return Result.fail(BizCode.NOT_LOGIN);
     }
 
-    @ExceptionHandler(SmsService.BizException.class)
-    public Result<Void> handleBiz(SmsService.BizException e) {
+    /**
+     * 统一处理业务异常
+     */
+    @ExceptionHandler(BizException.class)
+    public Result<Void> handleBizException(BizException e) {
         return new Result<>(
                 e.getBizCode().getCode(),
                 null,
