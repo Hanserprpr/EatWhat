@@ -7,12 +7,19 @@ import you.v50to.eatwhat.data.enums.BizCode;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class Result<T> {
 
     private Integer code; // 业务状态码
     private T data;       // 数据
     private String msg;   // 提示信息
+    private long timestamp;
+
+    public Result(int code, T data, String msg) {
+        this.code = code;
+        this.data = data;
+        this.msg = msg;
+        this.timestamp = System.currentTimeMillis();
+    }
 
     public static <T> Result<T> ok() {
         return new Result<>(BizCode.SUCCESS.getCode(), null, BizCode.SUCCESS.getMsg());

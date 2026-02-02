@@ -1,7 +1,6 @@
 package you.v50to.eatwhat.data.po;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -11,16 +10,16 @@ import java.time.OffsetDateTime;
 
 @Data
 @NoArgsConstructor
-@TableName("users")
-public class User {
+@TableName("verifications")
+public class Verification {
     @TableId(type = IdType.AUTO)
     private Long id;
-
-    @TableField("nick_name")
-    private String userName;
-
-    private String passwordHash;
-    private String avatar;
+    private Long accountId;
+    private String method;
+    private Boolean verified;
+    private String studentId;
+    private String realName;
+    private String verifiedEmail;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 }

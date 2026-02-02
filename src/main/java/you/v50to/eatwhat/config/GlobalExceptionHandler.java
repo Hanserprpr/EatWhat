@@ -1,15 +1,26 @@
 package you.v50to.eatwhat.config;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.jdbc.BadSqlGrammarException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import you.v50to.eatwhat.data.enums.BizCode;
 import you.v50to.eatwhat.data.vo.Result;
 import you.v50to.eatwhat.service.SmsService;
 
+import java.util.Objects;
+
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(cn.dev33.satoken.exception.NotLoginException.class)
+    public Result<Void> notLoginExceptionHandler() {
+        return Result.fail(BizCode.NOT_LOGIN);
+    }
 
     @ExceptionHandler(SmsService.BizException.class)
     public Result<Void> handleBiz(SmsService.BizException e) {
@@ -18,6 +29,26 @@ public class GlobalExceptionHandler {
                 null,
                 e.getMessage()
         );
+    }
+
+    @ExceptionHandler(BadSqlGrammarException.class)
+    public Result<Void> handleBadSql(BadSqlGrammarException e) {
+        log.error(e.getMessage());
+        return Result.fail(BizCode.DB_ERROR, "数据库未初始化或表不存在");
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public Result<Void> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        log.error(ex.getMessage(), ex);
+        return Result.fail(BizCode.PARAM_INVALID);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public Result<?> handleValidException(MethodArgumentNotValidException e) {
+        String msg = Objects.requireNonNull(e.getBindingResult()
+                        .getFieldError())
+                .getDefaultMessage();
+        return Result.fail(BizCode.PARAM_INVALID, msg);
     }
 
     @ExceptionHandler(Exception.class)
