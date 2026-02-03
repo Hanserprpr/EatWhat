@@ -1,0 +1,71 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/DBname
+    username:
+    password:
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+    out-of-order: false
+    clean-disabled: true
+
+  Jackson:
+    default-property-inclusion: non_null
+
+  mail:
+    host:          # SMTP服务器地址
+    port: 465      # SMTP端口，587为TLS端口，465为SSL端口
+    username:     # SMTP登录用户名（登录凭据）
+    password:    # SMTP登录密码或授权码
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+        properties:
+          mail:
+            debug: true
+
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      timeout: 10s
+      lettuce:
+        pool:
+          # 连接池最大连接数
+          max-active: 200
+          # 连接池最大阻塞等待时间（使用负值表示没有限制）
+          max-wait: -1ms
+          # 连接池中的最大空闲连接
+          max-idle: 10
+          # 连接池中的最小空闲连接
+          min-idle: 0
+
+sa-token:
+  timeout: -1
+  active-timeout: 259200      # 3天无操作下线
+  is-concurrent: false
+  is-share: false
+  token-prefix: Bearer
+  cookie-auto-fill-prefix: true
+
+sms:
+  active: aliyun
+  aliyun:
+    access-key-id:
+    access-key-secret:
+    sign-name: "速通互联验证码"
+    interval: 60
+
+app:
+  base-url: https://example.com  # 应用基础URL，用于生成邮箱验证链接，生产环境需要替换为实际域名
+  mail:
+    from: noreply@example.com      # 发件人邮箱地址，需要替换为实际的发件邮箱
+    from-name: project name             # 发件人名称
