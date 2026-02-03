@@ -19,6 +19,6 @@ public class CallbackController {
     @SaCheckLogin
     @RequestMapping("/callback")
     public Result<Void> callback(@RequestParam String token, HttpServletResponse response) {
-        return authService.callBack(token);
+        return authService.callBack(token, response);
     }
 }

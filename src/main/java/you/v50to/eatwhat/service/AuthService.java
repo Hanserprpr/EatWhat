@@ -5,7 +5,6 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +27,7 @@ import you.v50to.eatwhat.utils.JwtUtil;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -45,7 +45,7 @@ public class AuthService {
     private EmailService emailService;
     @Resource
     private StringRedisTemplate redis;
-    @Autowired
+    @Resource
     private SmsService smsService;
 
     @Value("${app.jwt.key}")
@@ -133,17 +133,18 @@ public class AuthService {
     }
 
     @Transactional
-    public Result<Void> callBack(String token) {
+    public Result<Void> callBack(String token, HttpServletResponse response) {
         String key = secret;
         Long userId = StpUtil.getLoginIdAsLong();
         Optional<JwtUtil.User> userOpt = JwtUtil.getClaim(token, key);
 
         if (userOpt.isEmpty()) {
+
             return Result.fail(BizCode.THIRD_PARTY_BAD_RESPONSE); // TODO: 错误处理
         } else {
             JwtUtil.User user = userOpt.get();
-            String casID = URLEncoder.encode(user.casId(), StandardCharsets.UTF_8);
-            String name = URLEncoder.encode(user.name(), StandardCharsets.UTF_8);
+            String casID = user.casId();
+            String name = user.name();
             Verification v = new Verification();
             v.setAccountId(userId);
             v.setMethod("sso");
@@ -253,5 +254,9 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(changePwdDTO.getNewPassword()));
         userMapper.updateById(user);
         return Result.ok();
+    }
+
+    public Result<List<String>> verify() {
+        return Result.ok(StpUtil.getPermissionList());
     }
 }

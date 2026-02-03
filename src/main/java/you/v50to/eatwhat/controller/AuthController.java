@@ -17,6 +17,8 @@ import you.v50to.eatwhat.service.SmsService;
 import you.v50to.eatwhat.utils.IpUtil;
 import jakarta.validation.Valid;
 
+import java.util.List;
+
 @CrossOrigin
 @RestController
 @RequestMapping("/auth")
@@ -85,7 +87,7 @@ public class AuthController {
     @SaCheckLogin
     @RequestMapping("/callback")
     public Result<Void> callback(@RequestParam String token, HttpServletResponse response) {
-        return authService.callBack(token);
+        return authService.callBack(token, response);
     }
 
     /**
@@ -137,6 +139,16 @@ public class AuthController {
     @PostMapping("/changePassword")
     public Result<Void> changePassword(@RequestBody ChangePwdDTO changePwdDTO) {
         return authService.changePassword(changePwdDTO);
+    }
+
+    /**
+     * 校验三方认证是否完成
+     * @return
+     */
+    @SaCheckLogin
+    @GetMapping("/verify")
+    public Result<List<String>> verify() {
+        return authService.verify();
     }
 }
 
