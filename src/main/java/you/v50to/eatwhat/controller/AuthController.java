@@ -72,7 +72,7 @@ public class AuthController {
      * 重定向到统一认证登录页面
      */
     @SaCheckLogin
-    @PostMapping("/sdu")
+    @RequestMapping("/sdu")
     public Result<Void> sdu(HttpServletResponse response) {
         try {
             response.sendRedirect(oauthUrl);

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -46,6 +47,9 @@ public class AuthService {
     private StringRedisTemplate redis;
     @Autowired
     private SmsService smsService;
+
+    @Value("${app.jwt.key}")
+    private String secret;
 
     private boolean usernameExists(String username) {
         return userMapper.exists(new LambdaQueryWrapper<User>()
@@ -130,7 +134,7 @@ public class AuthService {
 
     @Transactional
     public Result<Void> callBack(String token) {
-        String key = ""; // TODO: 添加key
+        String key = secret;
         Long userId = StpUtil.getLoginIdAsLong();
         Optional<JwtUtil.User> userOpt = JwtUtil.getClaim(token, key);
 
@@ -157,7 +161,7 @@ public class AuthService {
     public Result<Void> sendEmail(String email, String clientIp) {
         Long userId = StpUtil.getLoginIdAsLong();
 
-        // 检查该用户是否已经通过邮箱验证
+        // 检查该用户是否已经通过验证
         Verification existingVerification = verificationMapper.selectOne(
                 new LambdaQueryWrapper<Verification>()
                         .eq(Verification::getAccountId, userId)
