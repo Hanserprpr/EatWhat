@@ -3,7 +3,11 @@ package you.v50to.eatwhat.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+import you.v50to.eatwhat.data.dto.BindMobileReq;
+import you.v50to.eatwhat.data.dto.SendCodeReq;
+import you.v50to.eatwhat.data.enums.Scene;
 import you.v50to.eatwhat.data.vo.Result;
 import you.v50to.eatwhat.data.dto.UserInfoDTO;
 import you.v50to.eatwhat.service.UserService;
@@ -26,20 +30,19 @@ public class UserController {
 
     /**
      *
-     * @param mobile 手机号
-     * @param scene 枚举值 auth/change/forget/bind/verifybind
-     * @return 结果
+     * @param sendCodeReq
+     * @return
      */
     @SaCheckLogin
     @GetMapping("/getCode")
-    public Result<Void> getCode(@RequestParam String mobile, @RequestParam String scene) {
+    public Result<Void> getCode(@Valid @RequestBody SendCodeReq sendCodeReq) {
         String ip = IpUtil.getClientIp(request);
-        return userService.getCode(scene, mobile, ip);
+        return userService.getCode(sendCodeReq, ip);
     }
 
     @SaCheckLogin
     @PostMapping("/bindMobile")
-    public Result<Void> bindMobile(@RequestParam String scene, @RequestParam String mobile, @RequestParam String code) {
-        return userService.bindMobile(scene, mobile, code);
+    public Result<Void> bindMobile(@Valid @RequestBody BindMobileReq bindMobileReq) {
+        return userService.bindMobile(Scene.bind, bindMobileReq);
     }
 }

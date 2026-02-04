@@ -1,10 +1,14 @@
 package you.v50to.eatwhat.service;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import you.v50to.eatwhat.data.dto.BindMobileReq;
+import you.v50to.eatwhat.data.dto.SendCodeReq;
 import you.v50to.eatwhat.data.enums.BizCode;
+import you.v50to.eatwhat.data.enums.Scene;
 import you.v50to.eatwhat.data.po.Contact;
 import you.v50to.eatwhat.data.vo.Result;
 import you.v50to.eatwhat.data.dto.UserInfoDTO;
@@ -31,16 +35,24 @@ public class UserService {
         return Result.ok(info);
     }
 
-    public Result<Void> getCode(String scene, String mobile, String ip) {
-        if (StpUtil.getRoleList() == null){
+    public Result<Void> getCode(SendCodeReq sendCodeReq, String ip) {
+        Scene scene = sendCodeReq.getScene();
+        String mobile = sendCodeReq.getMobile();
+        if (!StpUtil.hasRole("verified")){
             return Result.fail(BizCode.STATE_NOT_ALLOWED, "未通过认证，无法发送验证码");
+        }
+        if (scene.equals(Scene.bind) && contactMapper.exists(new LambdaQueryWrapper<Contact>()
+                .eq(Contact::getAccountId, StpUtil.getLoginIdAsLong()))) {
+            return Result.fail(BizCode.OP_FAILED, "已绑定手机号，无法重复绑定");
         }
         smsService.sendCode(scene, mobile, ip);
         return Result.ok();
     }
 
-    public Result<Void> bindMobile(String scene, String mobile, String code) {
-        if (smsService.verifyCode(scene, mobile,code)){
+    public Result<Void> bindMobile(Scene scene, BindMobileReq bindMobileReq) {
+        String mobile = bindMobileReq.getMobile();
+        String code = bindMobileReq.getCode();
+        if (smsService.verifyCode(scene, mobile, code)){
             Contact contact = new Contact();
             contact.setAccountId(StpUtil.getLoginIdAsLong());
             contact.setPhone(mobile);

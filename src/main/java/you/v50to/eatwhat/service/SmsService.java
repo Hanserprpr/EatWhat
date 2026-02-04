@@ -22,6 +22,7 @@ import work.foofish.smsverify.config.AliyunDefaultRequest;
 import work.foofish.smsverify.core.SmsRequest;
 import work.foofish.smsverify.core.SmsResponse;
 import you.v50to.eatwhat.data.enums.BizCode;
+import you.v50to.eatwhat.data.enums.Scene;
 import you.v50to.eatwhat.exception.BizException;
 
 import java.util.concurrent.TimeUnit;
@@ -63,7 +64,7 @@ public class SmsService {
      * @param mobile   手机号
      * @param clientIp 客户端IP
      */
-    public void sendCode(String scene, String mobile, String clientIp) {
+    public void sendCode(Scene scene, String mobile, String clientIp) {
         validate(scene, mobile);
         applyGlobalLimit(scene);
 
@@ -82,15 +83,14 @@ public class SmsService {
         String code = gen6Digits();
 
         try {
-            SmsRequest request = switch (scene.toLowerCase()) {
-                case "auth" -> AliyunDefaultRequest.auth(mobile, code, String.valueOf(CODE_TTL.toMinutes()));
-                case "change" -> AliyunDefaultRequest.change(mobile, code, String.valueOf(CODE_TTL.toMinutes()));
-                case "forget" -> AliyunDefaultRequest.forget(mobile, code, String.valueOf(CODE_TTL.toMinutes()));
-                case "bind" -> AliyunDefaultRequest.bind(mobile, code, String.valueOf(CODE_TTL.toMinutes()));
-                case "verifybind", "verify_bind" ->
+            SmsRequest request = switch (scene) {
+                case auth -> AliyunDefaultRequest.auth(mobile, code, String.valueOf(CODE_TTL.toMinutes()));
+                case change -> AliyunDefaultRequest.change(mobile, code, String.valueOf(CODE_TTL.toMinutes()));
+                case forget -> AliyunDefaultRequest.forget(mobile, code, String.valueOf(CODE_TTL.toMinutes()));
+                case bind -> AliyunDefaultRequest.bind(mobile, code, String.valueOf(CODE_TTL.toMinutes()));
+                case verifybind ->
                         AliyunDefaultRequest.verifyBind(mobile, code, String.valueOf(CODE_TTL.toMinutes()));
-                default -> throw new BizException(BizCode.PARAM_INVALID, "不支持的验证码用途(scene): " + scene);
-            };
+                };
             SmsResponse resp = null;
 
             try {
@@ -133,7 +133,7 @@ public class SmsService {
         redis.opsForValue().set(cntKey, "0", CODE_TTL);
     }
 
-    public boolean verifyCode(String scene, String mobile, String inputCode) {
+    public boolean verifyCode(Scene scene, String mobile, String inputCode) {
         validate(scene, mobile);
 
         if (inputCode == null || inputCode.isBlank()) {
@@ -177,7 +177,7 @@ public class SmsService {
         return true;
     }
 
-    private void applyIpRateLimit(String scene, String clientIp) {
+    private void applyIpRateLimit(Scene scene, String clientIp) {
         String ipKey = keyIpLimit(scene, clientIp);
         Long cnt = redis.opsForValue().increment(ipKey);
         if (cnt != null && cnt == 1L) {
@@ -193,8 +193,8 @@ public class SmsService {
         return String.format("%0" + CODE_LEN + "d", n);
     }
 
-    private static void validate(String scene, String mobile) {
-        if (scene == null || scene.isBlank()) {
+    private static void validate(Scene scene, String mobile) {
+        if (scene == null) {
             throw new BizException(BizCode.PARAM_MISSING, "scene不能为空");
         }
         if (mobile == null || mobile.isBlank()) {
@@ -215,23 +215,23 @@ public class SmsService {
     }
 
     // Redis keys
-    private static String keyCode(String scene, String mobile) {
+    private static String keyCode(Scene scene, String mobile) {
         return "sms:code:" + scene + ":" + mobile;
     }
 
-    private static String keyFailCount(String scene, String mobile) {
+    private static String keyFailCount(Scene scene, String mobile) {
         return "sms:cnt:" + scene + ":" + mobile;
     }
 
-    private static String keyLimit(String scene, String mobile) {
+    private static String keyLimit(Scene scene, String mobile) {
         return "sms:limit:" + scene + ":" + mobile;
     }
 
-    private static String keyIpLimit(String scene, String ip) {
+    private static String keyIpLimit(Scene scene, String ip) {
         return "sms:ip:" + scene + ":" + ip;
     }
 
-    private static String hashCode(String scene, String mobile, String code) {
+    private static String hashCode(Scene scene, String mobile, String code) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             String raw = scene + "|" + mobile + "|" + code + "|" + HASH_SALT;
@@ -242,7 +242,7 @@ public class SmsService {
             throw new BizException(BizCode.SYSTEM_ERROR);
         }
     }
-    private void applyGlobalLimit(String scene) {
+    private void applyGlobalLimit(Scene scene) {
         String minute = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmm"));
         String key = "sms:global:" + scene + ":m:" + minute;
 

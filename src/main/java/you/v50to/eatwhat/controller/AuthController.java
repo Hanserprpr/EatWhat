@@ -11,6 +11,7 @@ import you.v50to.eatwhat.data.dto.ChangePwdDTO;
 import you.v50to.eatwhat.data.dto.LoginDTO;
 import you.v50to.eatwhat.data.dto.RegisterDTO;
 import you.v50to.eatwhat.data.enums.BizCode;
+import you.v50to.eatwhat.data.enums.Scene;
 import you.v50to.eatwhat.data.vo.Result;
 import you.v50to.eatwhat.service.AuthService;
 import you.v50to.eatwhat.service.SmsService;
@@ -125,7 +126,7 @@ public class AuthController {
     @PostMapping("/getCode")
     public Result<Void> sendCode(String mobile) {
         String ip = IpUtil.getClientIp(request);
-        return authService.sendCode("auth", mobile, ip);
+        return authService.sendCode(Scene.auth, mobile, ip);
     }
 
     /**

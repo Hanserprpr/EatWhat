@@ -15,6 +15,7 @@ import you.v50to.eatwhat.data.dto.ChangePwdDTO;
 import you.v50to.eatwhat.data.dto.LoginDTO;
 import you.v50to.eatwhat.data.dto.RegisterDTO;
 import you.v50to.eatwhat.data.enums.BizCode;
+import you.v50to.eatwhat.data.enums.Scene;
 import you.v50to.eatwhat.data.po.Contact;
 import you.v50to.eatwhat.data.po.User;
 import you.v50to.eatwhat.data.po.Verification;
@@ -234,7 +235,7 @@ public class AuthService {
     }
 
 
-    public Result<Void> sendCode(String auth, String mobile, String ip) {
+    public Result<Void> sendCode(Scene auth, String mobile, String ip) {
         if (StpUtil.getRoleList() == null){
             return Result.fail(BizCode.STATE_NOT_ALLOWED, "未通过认证，无法发送验证码");
         }
