@@ -29,9 +29,10 @@ public class UserController {
     }
 
     /**
+     * Sends a verification code based on the provided request parameters and client IP address.
      *
-     * @param sendCodeReq
-     * @return
+     * @param sendCodeReq the request containing information needed to send the verification code
+     * @return a {@link Result} indicating whether the verification code was sent successfully
      */
     @SaCheckLogin
     @GetMapping("/getCode")
@@ -45,4 +46,6 @@ public class UserController {
     public Result<Void> bindMobile(@Valid @RequestBody BindMobileReq bindMobileReq) {
         return userService.bindMobile(Scene.bind, bindMobileReq);
     }
+
+
 }
