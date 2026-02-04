@@ -95,10 +95,6 @@ public class AuthService {
         String password = loginDTO.getPassword();
         String device = loginDTO.getDevice().name();
 
-        if (!usernameExists(username)) {
-            return Result.fail(BizCode.USER_NOT_FOUND);
-        }
-
         User user;
 
         if (looksLikeEmail(username)) {
@@ -106,18 +102,27 @@ public class AuthService {
                     new LambdaQueryWrapper<Contact>()
                             .eq(Contact::getEmail, username)
             );
+            if (c == null) {
+                return Result.fail(BizCode.USER_NOT_FOUND);
+            }
             user = userMapper.selectById(c.getAccountId());
         } else if (looksLikePhone(username)) {
             Contact c = contactMapper.selectOne(
                     new LambdaQueryWrapper<Contact>()
                             .eq(Contact::getPhone, username)
             );
+            if (c == null) {
+                return Result.fail(BizCode.USER_NOT_FOUND);
+            }
             user = userMapper.selectById(c.getAccountId());
         } else {
             user = userMapper.selectOne(
                     new LambdaQueryWrapper<User>()
                             .eq(User::getUserName, username)
             );
+        }
+        if (user == null) {
+            return Result.fail(BizCode.USER_NOT_FOUND);
         }
         if (passwordEncoder.matches(password, user.getPasswordHash())) {
             StpUtil.login(user.getId(), device);
@@ -156,7 +161,7 @@ public class AuthService {
             String redisKey = "auth:" + userId;
             redis.opsForValue().set(redisKey, "sso", StpInterfaceImpl.TTL);
             //response.sendRedirect(CasPageLogin.DEFAULT_FORWARD + "?casId=" + casID + "&name=" + name);
-            return null;
+            return Result.ok();
         }
     }
 
@@ -236,7 +241,7 @@ public class AuthService {
 
 
     public Result<Void> sendCode(Scene auth, String mobile, String ip) {
-        if (StpUtil.getRoleList() == null){
+        if (!StpUtil.hasRole("verified")) {
             return Result.fail(BizCode.STATE_NOT_ALLOWED, "未通过认证，无法发送验证码");
         }
         smsService.sendCode(auth, mobile, ip);

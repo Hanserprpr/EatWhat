@@ -52,9 +52,19 @@ public class UserService {
     public Result<Void> bindMobile(Scene scene, BindMobileReq bindMobileReq) {
         String mobile = bindMobileReq.getMobile();
         String code = bindMobileReq.getCode();
+        Long userId = StpUtil.getLoginIdAsLong();
+
+        if (contactMapper.exists(new LambdaQueryWrapper<Contact>()
+                .eq(Contact::getAccountId, userId))) {
+            return Result.fail(BizCode.OP_FAILED, "已绑定手机号，无法重复绑定");
+        }
+        if (contactMapper.exists(new LambdaQueryWrapper<Contact>()
+                .eq(Contact::getPhone, mobile))) {
+            return Result.fail(BizCode.OP_FAILED, "该手机号已被绑定");
+        }
         if (smsService.verifyCode(scene, mobile, code)){
             Contact contact = new Contact();
-            contact.setAccountId(StpUtil.getLoginIdAsLong());
+            contact.setAccountId(userId);
             contact.setPhone(mobile);
             contactMapper.insert(contact);
             return Result.ok();

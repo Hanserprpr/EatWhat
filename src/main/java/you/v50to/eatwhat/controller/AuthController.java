@@ -82,7 +82,7 @@ public class AuthController {
         } catch (Exception e) {
             return Result.fail(BizCode.THIRD_PARTY_UNAVAILABLE, "重定向失败");
         }
-        return null;
+        return Result.ok();
     }
 
     @SaCheckLogin
@@ -151,4 +151,3 @@ public class AuthController {
         return authService.verify();
     }
 }
-

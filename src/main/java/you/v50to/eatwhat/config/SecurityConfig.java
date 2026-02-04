@@ -12,9 +12,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 @Configuration
 public class SecurityConfig {
@@ -46,6 +49,24 @@ public class SecurityConfig {
                 gen.writeNumber(millis);
             }
         });
+        module.addSerializer(OffsetDateTime.class, new JsonSerializer<OffsetDateTime>() {
+            @Override
+            public void serialize(OffsetDateTime value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+                gen.writeNumber(value.toInstant().toEpochMilli());
+            }
+        });
+        module.addSerializer(Instant.class, new JsonSerializer<Instant>() {
+            @Override
+            public void serialize(Instant value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+                gen.writeNumber(value.toEpochMilli());
+            }
+        });
+        module.addSerializer(ZonedDateTime.class, new JsonSerializer<ZonedDateTime>() {
+            @Override
+            public void serialize(ZonedDateTime value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+                gen.writeNumber(value.toInstant().toEpochMilli());
+            }
+        });
 
         mapper.registerModule(module);
 
@@ -54,4 +75,3 @@ public class SecurityConfig {
         return mapper;
     }
 }
-

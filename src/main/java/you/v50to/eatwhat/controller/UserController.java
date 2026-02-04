@@ -29,13 +29,13 @@ public class UserController {
     }
 
     /**
-     * Sends a verification code based on the provided request parameters and client IP address.
+     * 根据请求参数和客户端 IP 发送验证码
      *
-     * @param sendCodeReq the request containing information needed to send the verification code
-     * @return a {@link Result} indicating whether the verification code was sent successfully
+     * @param sendCodeReq 发送验证码所需的请求参数
+     * @return 发送结果
      */
     @SaCheckLogin
-    @GetMapping("/getCode")
+    @PostMapping("/getCode")
     public Result<Void> getCode(@Valid @RequestBody SendCodeReq sendCodeReq) {
         String ip = IpUtil.getClientIp(request);
         return userService.getCode(sendCodeReq, ip);
