@@ -32,8 +32,8 @@ public class LocationService {
     public List<ProvinceDTO> getAllProvinces() {
         List<Province> provinces = provinceMapper.selectList(null);
         return provinces.stream()
-            .map(this::convertToProvinceDTO)
-            .collect(Collectors.toList());
+                .map(this::convertToProvinceDTO)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -43,13 +43,12 @@ public class LocationService {
     @Cacheable(value = "cities", key = "#provinceId", unless = "#result == null || #result.isEmpty()")
     public List<CityDTO> getCitiesByProvinceId(Integer provinceId) {
         List<City> cities = cityMapper.selectList(
-            new LambdaQueryWrapper<City>()
-                .eq(City::getProvinceId, provinceId)
-                .orderByAsc(City::getId)
-        );
+                new LambdaQueryWrapper<City>()
+                        .eq(City::getProvinceId, provinceId)
+                        .orderByAsc(City::getId));
         return cities.stream()
-            .map(this::convertToCityDTO)
-            .collect(Collectors.toList());
+                .map(this::convertToCityDTO)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -58,9 +57,8 @@ public class LocationService {
     @Cacheable(value = "province", key = "#name")
     public Province getProvinceByName(String name) {
         return provinceMapper.selectOne(
-            new LambdaQueryWrapper<Province>()
-                .eq(Province::getName, name)
-        );
+                new LambdaQueryWrapper<Province>()
+                        .eq(Province::getName, name));
     }
 
     /**
@@ -69,10 +67,27 @@ public class LocationService {
     @Cacheable(value = "city", key = "#provinceId + '_' + #cityName")
     public City getCityByProvinceAndName(Integer provinceId, String cityName) {
         return cityMapper.selectOne(
-            new LambdaQueryWrapper<City>()
-                .eq(City::getProvinceId, provinceId)
-                .eq(City::getName, cityName)
-        );
+                new LambdaQueryWrapper<City>()
+                        .eq(City::getProvinceId, provinceId)
+                        .eq(City::getName, cityName));
+    }
+
+    /**
+     * 根据省份ID获取省份
+     * 使用缓存
+     */
+    @Cacheable(value = "province", key = "#provinceId")
+    public Province getProvinceById(Integer provinceId) {
+        return provinceMapper.selectById(provinceId);
+    }
+
+    /**
+     * 根据城市ID获取城市
+     * 使用缓存
+     */
+    @Cacheable(value = "city", key = "#cityId")
+    public City getCityById(Integer cityId) {
+        return cityMapper.selectById(cityId);
     }
 
     /**
@@ -80,9 +95,8 @@ public class LocationService {
      */
     private ProvinceDTO convertToProvinceDTO(Province province) {
         return new ProvinceDTO(
-            province.getId(),
-            province.getName()
-        );
+                province.getId(),
+                province.getName());
     }
 
     /**
@@ -90,10 +104,8 @@ public class LocationService {
      */
     private CityDTO convertToCityDTO(City city) {
         return new CityDTO(
-            city.getId(),
-            city.getProvinceId(),
-            city.getName()
-        );
+                city.getId(),
+                city.getProvinceId(),
+                city.getName());
     }
 }
-

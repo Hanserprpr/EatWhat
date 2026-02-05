@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import you.v50to.eatwhat.data.dto.BindMobileReq;
 import you.v50to.eatwhat.data.dto.SendCodeReq;
+import you.v50to.eatwhat.data.dto.UpdateUserInfoDTO;
 import you.v50to.eatwhat.data.enums.Scene;
 import you.v50to.eatwhat.data.vo.Result;
 import you.v50to.eatwhat.data.dto.UserInfoDTO;
@@ -47,5 +48,16 @@ public class UserController {
         return userService.bindMobile(Scene.bind, bindMobileReq);
     }
 
+    /**
+     * 更新用户个人信息
+     * 
+     * @param dto 更新数据
+     * @return 更新结果
+     */
+    @SaCheckLogin
+    @PutMapping("/info")
+    public Result<Void> updateInfo(@Valid @RequestBody UpdateUserInfoDTO dto) {
+        return userService.updateUserInfo(dto);
+    }
 
 }

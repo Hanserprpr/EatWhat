@@ -35,6 +35,9 @@ public enum BizCode {
     STATE_NOT_ALLOWED(40002, "当前状态不允许该操作"),
     RESOURCE_NOT_ENOUGH(40003, "资源不足"),
     DUPLICATE_SUBMIT(40004, "重复提交"),
+    CITY_PROVINCE_MISMATCH(40005, "城市与省份不匹配"),
+    PROVINCE_NOT_FOUND(40006, "省份不存在"),
+    CITY_NOT_FOUND(40007, "城市不存在"),
 
     // 5xxxx 外部依赖错误
     THIRD_PARTY_UNAVAILABLE(50001, "第三方服务不可用"),
