@@ -4,20 +4,23 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import you.v50to.eatwhat.data.dto.BindMobileReq;
-import you.v50to.eatwhat.data.dto.SendCodeReq;
-import you.v50to.eatwhat.data.dto.UpdateUserInfoDTO;
+import you.v50to.eatwhat.data.dto.*;
 import you.v50to.eatwhat.data.enums.BizCode;
 import you.v50to.eatwhat.data.enums.Scene;
 import you.v50to.eatwhat.data.po.Contact;
+import you.v50to.eatwhat.data.po.Privacy;
 import you.v50to.eatwhat.data.po.UserInfo;
 import you.v50to.eatwhat.data.vo.Result;
-import you.v50to.eatwhat.data.dto.UserInfoDTO;
 import you.v50to.eatwhat.mapper.ContactMapper;
+import you.v50to.eatwhat.mapper.FollowMapper;
+import you.v50to.eatwhat.mapper.PrivacyMapper;
 import you.v50to.eatwhat.mapper.UserInfoMapper;
 import you.v50to.eatwhat.mapper.UserMapper;
 import you.v50to.eatwhat.utils.LocationValidationUtil;
+
+import java.util.List;
 
 @Service
 @Slf4j
@@ -32,7 +35,13 @@ public class UserService {
     @Resource
     private UserInfoMapper userInfoMapper;
     @Resource
+    private PrivacyMapper privacyMapper;
+    @Resource
+    private FollowMapper followMapper;
+    @Resource
     private LocationValidationUtil locationValidationUtil;
+    @Resource
+    private StringRedisTemplate redis;
 
     public Result<UserInfoDTO> getInfo() {
         Long userId = StpUtil.getLoginIdAsLong();
@@ -138,5 +147,79 @@ public class UserService {
         if (dto.getHometownCityId() != null) {
             userInfo.setHometownCityId(dto.getHometownCityId());
         }
+    }
+
+    /**
+     * 获取粉丝列表
+     *
+     * @return 粉丝列表
+     */
+    public Result<List<FansDTO>> getFollowers(Long userId) {
+        if (userId == null  || userId <= 0) {
+            userId = StpUtil.getLoginIdAsLong();
+        }
+
+        // 检查隐私设置
+        String key = "privacy:" + userId;
+        Object v = redis.opsForHash().get(key, "follower");
+        if (v == null) {
+            Privacy p = privacyMapper.selectOne(
+                    new LambdaQueryWrapper<Privacy>()
+                            .eq(Privacy::getAccountId, userId));
+            if (p != null) {
+                redis.opsForHash().put(key, "follower", p.getFollower().toString());
+                redis.opsForHash().put(key, "following", p.getFollowing().toString());
+                v = p.getFollower().toString();
+            } else {
+                // 如果没有隐私设置记录，默认为公开
+                v = "true";
+            }
+        }
+
+        if ("false".equals(v.toString())) {
+            return Result.fail(BizCode.NOT_SUPPORTED, "未公开");
+        }
+
+        List<FansDTO> followers = followMapper.selectFollowersByTargetId(userId);
+        return Result.ok(followers);
+    }
+
+    public Result<Void> changePrivacy(PrivacyDTO dto) {
+        Privacy p = new Privacy();
+        p.setAccountId(StpUtil.getLoginIdAsLong());
+        p.setFollowing(dto.getFollowing());
+        p.setFollower(dto.getFollower());
+        privacyMapper.updateById(p);
+        return Result.ok();
+    }
+
+    public Result<List<FansDTO>> getFollowings(Long userId) {
+        if (userId == null  || userId <= 0) {
+            userId = StpUtil.getLoginIdAsLong();
+        }
+
+        // 检查隐私设置
+        String key = "privacy:" + userId;
+        Object v = redis.opsForHash().get(key, "following");
+        if (v == null) {
+            Privacy p = privacyMapper.selectOne(
+                    new LambdaQueryWrapper<Privacy>()
+                            .eq(Privacy::getAccountId, userId));
+            if (p != null) {
+                redis.opsForHash().put(key, "follower", p.getFollower().toString());
+                redis.opsForHash().put(key, "following", p.getFollowing().toString());
+                v = p.getFollowing().toString();
+            } else {
+                // 如果没有隐私设置记录，默认为公开
+                v = "true";
+            }
+        }
+
+        if ("false".equals(v.toString())) {
+            return Result.fail(BizCode.NOT_SUPPORTED, "未公开");
+        }
+
+        List<FansDTO> followers = followMapper.selectFollowingsByTargetId(userId);
+        return Result.ok(followers);
     }
 }

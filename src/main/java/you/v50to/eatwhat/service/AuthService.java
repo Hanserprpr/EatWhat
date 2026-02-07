@@ -3,7 +3,6 @@ package you.v50to.eatwhat.service;
 import cn.dev33.satoken.stp.SaTokenInfo;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.sentry.Sentry;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,17 +17,17 @@ import you.v50to.eatwhat.data.dto.RegisterDTO;
 import you.v50to.eatwhat.data.enums.BizCode;
 import you.v50to.eatwhat.data.enums.Scene;
 import you.v50to.eatwhat.data.po.Contact;
+import you.v50to.eatwhat.data.po.Privacy;
 import you.v50to.eatwhat.data.po.User;
 import you.v50to.eatwhat.data.po.Verification;
 import you.v50to.eatwhat.data.vo.Result;
 import you.v50to.eatwhat.mapper.ContactMapper;
+import you.v50to.eatwhat.mapper.PrivacyMapper;
 import you.v50to.eatwhat.mapper.UserMapper;
 import you.v50to.eatwhat.mapper.VerificationMapper;
 import you.v50to.eatwhat.utils.JwtUtil;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,6 +42,8 @@ public class AuthService {
     private PasswordEncoder passwordEncoder;
     @Resource
     private ContactMapper contactMapper;
+    @Resource
+    private PrivacyMapper privacyMapper;
     @Resource
     private EmailService emailService;
     @Resource
@@ -65,6 +66,7 @@ public class AuthService {
         return Result.ok();
     }
 
+    @Transactional
     public Result<SaTokenInfo> register(RegisterDTO registerDTO) {
         String username = registerDTO.getUsername();
         String password = registerDTO.getPassword();
@@ -76,6 +78,13 @@ public class AuthService {
         user.setUserName(username);
         user.setPasswordHash(passwordEncoder.encode(password));
         userMapper.insert(user);
+
+        // 创建默认隐私设置（默认公开）
+        Privacy privacy = new Privacy();
+        privacy.setAccountId(user.getId());
+        privacy.setFollowing(true);
+        privacy.setFollower(true);
+        privacyMapper.insert(privacy);
 
         StpUtil.login(user.getId(), device);
         SaTokenInfo tokenInfo = StpUtil.getTokenInfo();

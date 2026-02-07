@@ -144,6 +144,11 @@
             <artifactId>sentry-async-profiler</artifactId>
             <version>8.31.0</version>
         </dependency>
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry-logback</artifactId>
+            <version>8.31.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -180,12 +185,12 @@
                 <extensions>true</extensions>
                 <configuration>
                     <!-- In case you're self hosting, provide the URL here -->
-                    <!-- <url>http://localhost:8000/</url> -->
-                    <org></org>
-                    <project></project>
+                    <url>https://sentry.orbithy.com/</url>
+                    <org>orbithy</org>
+                    <project>eatwhat</project>
                     <!-- Do not commit your auth token with this file, you should provide it via the SENTRY_AUTH_TOKEN environment variable or similar -->
-                    <!-- <authToken>${env.SENTRY_AUTH_TOKEN}</authToken> -->
-                    <authToken></authToken>
+                    <!--suppress UnresolvedMavenProperty -->
+                    <authToken>${env.SENTRY_AUTH_TOKEN}</authToken>
                     <!-- Enable debugging to see logs in case something goes wrong when uploading the source bundle -->
                     <debugSentryCli>true</debugSentryCli>
                 </configuration>

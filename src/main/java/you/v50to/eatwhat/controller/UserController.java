@@ -5,14 +5,13 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
-import you.v50to.eatwhat.data.dto.BindMobileReq;
-import you.v50to.eatwhat.data.dto.SendCodeReq;
-import you.v50to.eatwhat.data.dto.UpdateUserInfoDTO;
+import you.v50to.eatwhat.data.dto.*;
 import you.v50to.eatwhat.data.enums.Scene;
 import you.v50to.eatwhat.data.vo.Result;
-import you.v50to.eatwhat.data.dto.UserInfoDTO;
 import you.v50to.eatwhat.service.UserService;
 import you.v50to.eatwhat.utils.IpUtil;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/user")
@@ -58,6 +57,39 @@ public class UserController {
     @PutMapping("/updateInfo")
     public Result<Void> updateInfo(@Valid @RequestBody UpdateUserInfoDTO dto) {
         return userService.updateUserInfo(dto);
+    }
+
+    /**
+     * 获取粉丝列表
+     *
+     * @param userId 用户ID，不传则为当前用户
+     * @return 粉丝列表
+     */
+    @SaCheckLogin
+    @GetMapping("/followers")
+    public Result<List<FansDTO>> getFollowers(@RequestParam(required = false) Long userId) {
+        return userService.getFollowers(userId);
+    }
+
+    /**
+     * 获取关注列表
+     *
+     * @param userId 用户ID，不传则为当前用户
+     * @return 关注列表
+     */
+    @SaCheckLogin
+    @GetMapping("/followings")
+    public Result<List<FansDTO>> getFollowings(@RequestParam(required = false) Long userId) {
+        return userService.getFollowings(userId);
+    }
+
+    /**
+     * 更改隐私设置
+     */
+    @SaCheckLogin
+    @PostMapping("/changePrivacy")
+    public Result<Void> changePrivacy(@RequestBody PrivacyDTO dto) {
+        return userService.changePrivacy(dto);
     }
 
 }

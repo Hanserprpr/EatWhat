@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <!-- 只把 ERROR 及以上作为 Sentry 事件上报 -->
+    <!-- INFO/WARN 作为 breadcrumbs（用于排查时的上下文），不会生成事件刷屏 -->
+    <appender name="SENTRY" class="io.sentry.logback.SentryAppender">
+        <minimumBreadcrumbLevel>INFO</minimumBreadcrumbLevel>
+        <minimumEventLevel>ERROR</minimumEventLevel>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="SENTRY"/>
+    </root>
+</configuration>
