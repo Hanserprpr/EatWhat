@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import you.v50to.eatwhat.data.dto.*;
 import you.v50to.eatwhat.data.enums.Scene;
@@ -14,6 +15,7 @@ import you.v50to.eatwhat.utils.IpUtil;
 
 import java.util.List;
 
+@Validated
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -23,6 +25,9 @@ public class UserController {
     @Resource
     private HttpServletRequest request;
 
+    /**
+     * 获取用户个人信息
+     */
     @SaCheckLogin
     @GetMapping("/info")
     public Result<UserInfoDTO> info() {
@@ -103,4 +108,12 @@ public class UserController {
         return userService.changePrivacy(dto);
     }
 
+    /**
+     * 获取其他用户信息
+     */
+    @SaCheckLogin
+    @GetMapping("/userInfo")
+    public Result<OtherUserInfoDTO> getUserInfo(@RequestParam Long userId) {
+        return userService.getUserInfo(userId);
+    }
 }

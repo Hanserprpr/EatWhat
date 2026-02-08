@@ -1,6 +1,7 @@
 package you.v50to.eatwhat.config;
 
 import io.sentry.Sentry;
+import io.sentry.SentryLevel;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -8,10 +9,12 @@ import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import you.v50to.eatwhat.data.enums.BizCode;
 import you.v50to.eatwhat.data.vo.Result;
 import you.v50to.eatwhat.exception.BizException;
 
+import java.util.List;
 import java.util.Objects;
 
 @Slf4j
@@ -33,6 +36,20 @@ public class GlobalExceptionHandler {
                 null,
                 e.getMessage()
         );
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public Result<Void> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        Sentry.withScope(scope -> {
+            scope.setLevel(SentryLevel.WARNING);
+            scope.setFingerprint(List.of("param-type-mismatch", ex.getName()));
+            scope.setTag("error_type", "param_type_mismatch");
+            scope.setExtra("param", ex.getName());
+            scope.setExtra("value", String.valueOf(ex.getValue()));
+            Sentry.captureException(ex);
+        });
+
+        return Result.fail(BizCode.PARAM_INVALID);
     }
 
     @ExceptionHandler(BadSqlGrammarException.class)

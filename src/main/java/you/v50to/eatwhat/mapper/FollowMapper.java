@@ -81,5 +81,18 @@ public interface FollowMapper extends BaseMapper<Follow> {
             WHERE account_id = #{accountId}
             """)
     Long countFollowingsByAccountId(@Param("accountId") Long accountId);
+
+    /**
+     * 检查用户A是否关注用户B
+     * @param accountId 用户A的ID
+     * @param targetId 用户B的ID
+     * @return 是否关注
+     */
+    @Select("""
+            SELECT COUNT(*) > 0
+            FROM follow
+            WHERE account_id = #{accountId} AND target_id = #{targetId}
+            """)
+    Boolean isFollowing(@Param("accountId") Long accountId, @Param("targetId") Long targetId);
 }
 

@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import you.v50to.eatwhat.data.po.User;
 import you.v50to.eatwhat.data.dto.UserInfoDTO;
+import you.v50to.eatwhat.data.dto.OtherUserInfoDTO;
 
 @Mapper
 public interface UserMapper extends BaseMapper<User> {
@@ -30,4 +31,45 @@ public interface UserMapper extends BaseMapper<User> {
             LIMIT 1
             """)
     UserInfoDTO selectUserInfoById(@Param("userId") Long userId);
+
+    /**
+     * 查询用户获得的总点赞数
+     * @param userId 用户ID
+     * @return 总点赞数
+     */
+    @Select("""
+            SELECT COALESCE(
+                (SELECT SUM(likes_count) FROM activity_foods WHERE account_id = #{userId} AND deleted_at IS NULL), 0
+            ) + COALESCE(
+                (SELECT SUM(likes_count) FROM activity_dinners WHERE account_id = #{userId} AND deleted_at IS NULL), 0
+            ) AS total
+            """)
+    Integer countEarnedLikes(@Param("userId") Long userId);
+
+    /**
+     * 获取其他用户的完整信息
+     * @param userId 目标用户ID
+     * @param currentUserId 当前登录用户ID
+     * @return 其他用户信息
+     */
+    @Select("""
+            SELECT
+                u.nick_name AS userName,
+                u.avatar,
+                COALESCE(
+                    (SELECT SUM(likes_count) FROM activity_foods WHERE account_id = #{userId} AND deleted_at IS NULL), 0
+                ) + COALESCE(
+                    (SELECT SUM(likes_count) FROM activity_dinners WHERE account_id = #{userId} AND deleted_at IS NULL), 0
+                ) AS earnedLikes,
+                (SELECT COUNT(*) FROM follow WHERE target_id = #{userId}) AS fansCount,
+                (SELECT COUNT(*) FROM follow WHERE account_id = #{userId}) AS followingsCount,
+                COALESCE((SELECT follower FROM privacy WHERE account_id = #{userId}), true) AS fansVisible,
+                COALESCE((SELECT following FROM privacy WHERE account_id = #{userId}), true) AS followingsVisible,
+                EXISTS(SELECT 1 FROM follow WHERE account_id = #{userId} AND target_id = #{currentUserId}) AS isFollowingMe,
+                EXISTS(SELECT 1 FROM follow WHERE account_id = #{currentUserId} AND target_id = #{userId}) AS isFollowingHim
+            FROM users u
+            WHERE u.id = #{userId}
+            LIMIT 1
+            """)
+    OtherUserInfoDTO selectOtherUserInfo(@Param("userId") Long userId, @Param("currentUserId") Long currentUserId);
 }

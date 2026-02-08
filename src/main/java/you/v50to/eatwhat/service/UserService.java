@@ -11,6 +11,7 @@ import you.v50to.eatwhat.data.enums.BizCode;
 import you.v50to.eatwhat.data.enums.Scene;
 import you.v50to.eatwhat.data.po.Contact;
 import you.v50to.eatwhat.data.po.Privacy;
+import you.v50to.eatwhat.data.po.User;
 import you.v50to.eatwhat.data.po.UserInfo;
 import you.v50to.eatwhat.data.vo.PageResult;
 import you.v50to.eatwhat.data.vo.Result;
@@ -271,5 +272,23 @@ public class UserService {
         // 构建分页结果
         PageResult<FansDTO> pageResult = PageResult.of(followings, page, pageSize, totalItems);
         return Result.ok(pageResult);
+    }
+
+    /**
+     * 获取其他用户信息
+     *
+     * @param userId 目标用户ID
+     * @return 用户信息
+     */
+    public Result<OtherUserInfoDTO> getUserInfo(Long userId) {
+        Long currentUserId = StpUtil.getLoginIdAsLong();
+
+        OtherUserInfoDTO info = userMapper.selectOtherUserInfo(userId, currentUserId);
+
+        if (info == null) {
+            return Result.fail(BizCode.USER_NOT_FOUND);
+        }
+
+        return Result.ok(info);
     }
 }

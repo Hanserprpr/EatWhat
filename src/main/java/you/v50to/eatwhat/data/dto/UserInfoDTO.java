@@ -3,6 +3,9 @@ package you.v50to.eatwhat.data.dto;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * 用户自己的信息
+ */
 @Data
 @NoArgsConstructor
 public class UserInfoDTO {
