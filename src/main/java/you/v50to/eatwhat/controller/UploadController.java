@@ -4,14 +4,21 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import you.v50to.eatwhat.data.dto.PresignBatchUploadReqDTO;
+import you.v50to.eatwhat.data.dto.PresignBatchUploadRespDTO;
 import you.v50to.eatwhat.data.dto.PresignUploadReqDTO;
 import you.v50to.eatwhat.data.dto.PresignUploadRespDTO;
+import you.v50to.eatwhat.data.enums.BizCode;
 import you.v50to.eatwhat.data.vo.Result;
+import you.v50to.eatwhat.exception.BizException;
 import you.v50to.eatwhat.service.storage.ObjectStorageService;
+
+import java.util.List;
 
 @SaCheckLogin
 @RestController
@@ -33,5 +40,26 @@ public class UploadController {
         );
         PresignUploadRespDTO resp = new PresignUploadRespDTO(presigned.putUrl(), presigned.key(), presigned.expireAt());
         return Result.ok(resp);
+    }
+
+    @PostMapping("/presign/batch")
+    public Result<PresignBatchUploadRespDTO> presignBatch(@Valid @RequestBody PresignBatchUploadReqDTO dto) {
+        if (CollectionUtils.isEmpty(dto.getFiles())) {
+            throw new BizException(BizCode.PARAM_INVALID, "文件列表不能为空");
+        }
+        Long userId = StpUtil.getLoginIdAsLong();
+        List<PresignUploadRespDTO> files = dto.getFiles().stream()
+                .map(file -> {
+                    ObjectStorageService.PresignedUpload presigned = objectStorageService.presignPut(
+                            userId,
+                            dto.getBiz(),
+                            file.getFileName(),
+                            file.getContentType(),
+                            file.getFileSize()
+                    );
+                    return new PresignUploadRespDTO(presigned.putUrl(), presigned.key(), presigned.expireAt());
+                })
+                .toList();
+        return Result.ok(new PresignBatchUploadRespDTO(files));
     }
 }
