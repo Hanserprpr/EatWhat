@@ -14,21 +14,17 @@ import you.v50to.eatwhat.data.enums.BizCode;
 import you.v50to.eatwhat.data.enums.Scene;
 import you.v50to.eatwhat.data.vo.Result;
 import you.v50to.eatwhat.service.AuthService;
-import you.v50to.eatwhat.service.SmsService;
 import you.v50to.eatwhat.utils.IpUtil;
 import jakarta.validation.Valid;
 
 import java.util.List;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
     @Resource
     private AuthService authService;
-    @Resource
-    private SmsService smsService;
     @Resource
     private HttpServletRequest request;
 
@@ -143,7 +139,7 @@ public class AuthController {
 
     /**
      * 校验三方认证是否完成
-     * @return
+     * @return 完成的认证类型列表
      */
     @SaCheckLogin
     @GetMapping("/verify")

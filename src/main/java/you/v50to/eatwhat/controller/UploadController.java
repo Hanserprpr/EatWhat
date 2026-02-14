@@ -17,7 +17,6 @@ import you.v50to.eatwhat.service.storage.ObjectStorageService;
 
 import java.util.List;
 
-@CrossOrigin
 @SaCheckLogin
 @RestController
 @RequestMapping("/upload")

@@ -8,7 +8,6 @@ import you.v50to.eatwhat.data.vo.PageResult;
 import you.v50to.eatwhat.data.vo.Result;
 import you.v50to.eatwhat.service.NotificationService;
 
-@CrossOrigin
 @SaCheckLogin
 @RestController
 @RequestMapping("/notification")

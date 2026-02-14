@@ -14,7 +14,6 @@ import you.v50to.eatwhat.service.UserService;
 import you.v50to.eatwhat.utils.IpUtil;
 
 @Validated
-@CrossOrigin
 @RestController
 @RequestMapping("/user")
 public class UserController {
