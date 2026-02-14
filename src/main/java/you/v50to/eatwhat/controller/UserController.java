@@ -13,9 +13,8 @@ import you.v50to.eatwhat.data.vo.Result;
 import you.v50to.eatwhat.service.UserService;
 import you.v50to.eatwhat.utils.IpUtil;
 
-import java.util.List;
-
 @Validated
+@CrossOrigin
 @RestController
 @RequestMapping("/user")
 public class UserController {

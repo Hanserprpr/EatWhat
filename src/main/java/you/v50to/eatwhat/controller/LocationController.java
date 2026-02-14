@@ -13,6 +13,7 @@ import java.util.List;
 /**
  * 地理位置控制器
  */
+@CrossOrigin
 @SaCheckLogin
 @RestController
 @RequestMapping("/api/location")

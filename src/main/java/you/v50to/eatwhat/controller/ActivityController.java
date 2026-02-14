@@ -10,6 +10,7 @@ import you.v50to.eatwhat.data.vo.PageResult;
 import you.v50to.eatwhat.data.vo.Result;
 import you.v50to.eatwhat.service.ActivityService;
 
+@CrossOrigin
 @SaCheckLogin
 @RestController
 @RequestMapping("/activity")

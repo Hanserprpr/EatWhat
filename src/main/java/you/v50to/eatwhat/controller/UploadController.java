@@ -5,10 +5,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import you.v50to.eatwhat.data.dto.PresignBatchUploadReqDTO;
 import you.v50to.eatwhat.data.dto.PresignBatchUploadRespDTO;
 import you.v50to.eatwhat.data.dto.PresignUploadReqDTO;
@@ -20,6 +17,7 @@ import you.v50to.eatwhat.service.storage.ObjectStorageService;
 
 import java.util.List;
 
+@CrossOrigin
 @SaCheckLogin
 @RestController
 @RequestMapping("/upload")
