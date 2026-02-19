@@ -26,6 +26,16 @@ public class GlobalExceptionHandler {
         return Result.fail(BizCode.NOT_LOGIN);
     }
 
+    @ExceptionHandler(cn.dev33.satoken.exception.NotRoleException.class)
+    public Result<Void> notRoleExceptionHandler() {
+        return Result.fail(BizCode.NO_PERMISSION, "用户未验证");
+    }
+
+    @ExceptionHandler(cn.dev33.satoken.exception.NotPermissionException.class)
+    public Result<Void> notPermissionExceptionHandler() {
+        return Result.fail(BizCode.NO_PERMISSION, "用户未验证");
+    }
+
     /**
      * 统一处理业务异常
      */

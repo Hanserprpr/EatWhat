@@ -45,4 +45,24 @@ public interface ActivityFoodMapper extends BaseMapper<ActivityFood> {
             LIMIT 1
             """)
     ActivityFood selectActiveFoodById(@Param("id") Long id);
+
+    @Select("""
+            SELECT f.*,
+                   CASE WHEN al.id IS NULL THEN FALSE ELSE TRUE END AS is_liked
+            FROM activity_foods f
+            LEFT JOIN activity_likes al
+              ON al.activity_id = f.id
+             AND al.account_id = #{accountId}
+             AND al.target_type = 'food'
+             AND al.deleted_at IS NULL
+            WHERE f.province_id = #{provinceId}
+              AND f.deleted_at IS NULL
+            ORDER BY f.created_at
+            LIMIT #{limit} OFFSET #{offset}
+            """)
+    List<ActivityFood> selectFoodsByProvinceWithLiked(@Param("provinceId") Integer provinceId,
+                                                      @Param("accountId") Long accountId,
+                                                      @Param("offset") Integer offset,
+                                                      @Param("limit") Integer limit);
+
 }

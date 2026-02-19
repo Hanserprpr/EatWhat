@@ -24,6 +24,8 @@ public class ActivityFood {
     @TableField(value = "picture_url", typeHandler = StringArrayTypeHandler.class)
     private String[] pictureUrl;
     private Integer likesCount;
+    @TableField(exist = false)
+    private Boolean isLiked;
     private OffsetDateTime deletedAt;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;

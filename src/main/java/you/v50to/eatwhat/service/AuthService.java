@@ -29,6 +29,7 @@ import you.v50to.eatwhat.mapper.VerificationMapper;
 import you.v50to.eatwhat.utils.JwtUtil;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,8 +53,6 @@ public class AuthService {
     @Resource
     private SmsService smsService;
 
-    @Value("${app.base-url")
-    private String BASE_URL;
     @Value("${app.jwt.key}")
     private String secret;
 
@@ -153,14 +152,16 @@ public class AuthService {
 
     @SneakyThrows
     @Transactional
-    public Result<Void> callBack(String token, HttpServletResponse response) {
+    public Result<HashMap<String, Object>> callBack(String token, HttpServletResponse response) {
         String key = secret;
         Long userId = StpUtil.getLoginIdAsLong();
         Optional<JwtUtil.User> userOpt = JwtUtil.getClaim(token, key);
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("redirect", "/error");
+        data.put("user", userOpt);
 
         if (userOpt.isEmpty()) {
-            response.sendRedirect(BASE_URL + "/error");
-            return Result.fail(BizCode.THIRD_PARTY_BAD_RESPONSE);
+            return Result.fail(BizCode.THIRD_PARTY_BAD_RESPONSE, data);
         } else {
             JwtUtil.User user = userOpt.get();
             String casID = user.casId();
@@ -174,7 +175,7 @@ public class AuthService {
             verificationMapper.insert(v);
             String redisKey = "auth:" + userId;
             redis.opsForValue().set(redisKey, "sso", StpInterfaceImpl.TTL);
-            response.sendRedirect(BASE_URL + "/home");
+            response.sendRedirect("/home");
             return Result.ok();
         }
     }

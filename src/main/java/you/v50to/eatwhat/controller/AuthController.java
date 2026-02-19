@@ -17,6 +17,7 @@ import you.v50to.eatwhat.service.AuthService;
 import you.v50to.eatwhat.utils.IpUtil;
 import jakarta.validation.Valid;
 
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
@@ -83,7 +84,7 @@ public class AuthController {
 
     @SaCheckLogin
     @RequestMapping("/callback")
-    public Result<Void> callback(@RequestParam String token, HttpServletResponse response) {
+    public Result<HashMap<String, Object>> callback(@RequestParam String token, HttpServletResponse response) {
         return authService.callBack(token, response);
     }
 

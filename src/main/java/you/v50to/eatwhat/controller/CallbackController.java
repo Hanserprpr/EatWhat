@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 import you.v50to.eatwhat.data.vo.Result;
 import you.v50to.eatwhat.service.AuthService;
 
+import java.util.HashMap;
+
 @RequestMapping
 @RestController
 public class CallbackController {
@@ -18,7 +20,7 @@ public class CallbackController {
 
     @SaCheckLogin
     @RequestMapping("/callback")
-    public Result<Void> callback(@RequestParam String token, HttpServletResponse response) {
+    public Result<HashMap<String, Object>> callback(@RequestParam String token, HttpServletResponse response) {
         return authService.callBack(token, response);
     }
 }
