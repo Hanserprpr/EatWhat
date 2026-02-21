@@ -360,6 +360,7 @@ public class ActivityService {
         dto.setCityId(food.getCityId());
         dto.setPictureUrl(objectStorageService.signGetUrls(toList(food.getPictureUrl())));
         dto.setLikesCount(food.getLikesCount());
+        dto.setIsLiked(Boolean.TRUE.equals(food.getIsLiked()));
         dto.setCreatedAt(toEpochMilli(food.getCreatedAt()));
         dto.setUpdatedAt(toEpochMilli(food.getUpdatedAt()));
         return dto;
@@ -407,5 +408,19 @@ public class ActivityService {
             return 20;
         }
         return Math.min(pageSize, 100);
+    }
+
+    public Result<List<ActivityFoodDTO>> getFoodsByProvinceId(Integer provinceId,  Integer page, Integer pageSize) {
+        if (page == null || page < 1) {
+            page = 1;
+        }
+        if (pageSize == null || pageSize < 1) {
+            pageSize = 20;
+        }
+        int offset = (page - 1) * pageSize;
+        Long userId = StpUtil.getLoginIdAsLong();
+        List<ActivityFood> records = activityFoodMapper.selectFoodsByProvinceWithLiked(provinceId, userId, offset, pageSize);
+        List<ActivityFoodDTO> foods = records.stream().map(this::toFoodDTO).toList();
+        return Result.ok(foods);
     }
 }

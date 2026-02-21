@@ -1,6 +1,5 @@
 package you.v50to.eatwhat.data.vo;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import you.v50to.eatwhat.data.enums.BizCode;
@@ -38,4 +37,11 @@ public class Result<T> {
         return new Result<>(bizCode.getCode(), null, bizCode.getMsg() + "：" + extraMsg);
     }
 
+    public static <T> Result<T> fail(BizCode bizCode, T data) {
+        return new Result<>(bizCode.getCode(), data, bizCode.getMsg());
+    }
+
+    public static <T> Result<T> fail(BizCode bizCode, T data, String extraMsg) {
+        return new Result<>(bizCode.getCode(), data, bizCode.getMsg() + "：" + extraMsg);
+    }
 }

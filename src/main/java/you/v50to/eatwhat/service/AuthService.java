@@ -5,6 +5,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +29,7 @@ import you.v50to.eatwhat.mapper.VerificationMapper;
 import you.v50to.eatwhat.utils.JwtUtil;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -148,15 +150,18 @@ public class AuthService {
         return Result.ok();
     }
 
+    @SneakyThrows
     @Transactional
-    public Result<Void> callBack(String token, HttpServletResponse response) {
+    public Result<HashMap<String, Object>> callBack(String token, HttpServletResponse response) {
         String key = secret;
         Long userId = StpUtil.getLoginIdAsLong();
         Optional<JwtUtil.User> userOpt = JwtUtil.getClaim(token, key);
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("redirect", "/error");
+        data.put("user", userOpt);
 
         if (userOpt.isEmpty()) {
-
-            return Result.fail(BizCode.THIRD_PARTY_BAD_RESPONSE); // TODO: 错误处理
+            return Result.fail(BizCode.THIRD_PARTY_BAD_RESPONSE, data);
         } else {
             JwtUtil.User user = userOpt.get();
             String casID = user.casId();
@@ -170,7 +175,7 @@ public class AuthService {
             verificationMapper.insert(v);
             String redisKey = "auth:" + userId;
             redis.opsForValue().set(redisKey, "sso", StpInterfaceImpl.TTL);
-            //response.sendRedirect(CasPageLogin.DEFAULT_FORWARD + "?casId=" + casID + "&name=" + name);
+            response.sendRedirect("/home");
             return Result.ok();
         }
     }

@@ -16,6 +16,7 @@ public class ActivityFoodDTO {
     private Integer cityId;
     private List<String> pictureUrl;
     private Integer likesCount;
+    private Boolean isLiked;
     private Long createdAt;
     private Long updatedAt;
 }
