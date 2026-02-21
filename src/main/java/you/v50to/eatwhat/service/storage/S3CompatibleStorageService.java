@@ -59,7 +59,7 @@ public class S3CompatibleStorageService implements ObjectStorageService {
                 .build();
 
         PresignedGetObjectRequest presignedRequest = getPresigner().presignGetObject(presignRequest);
-        return presignedRequest.url().toString();
+        return toCdnUrl(presignedRequest.url().toString());
     }
 
     @Override
@@ -94,6 +94,7 @@ public class S3CompatibleStorageService implements ObjectStorageService {
 
         PresignedPutObjectRequest signed = getPresigner().presignPutObject(putObjectPresignRequest);
         long expireAt = Instant.now().plusSeconds(ttl).toEpochMilli();
+        // PUT 签名直接走源站（上传不走 CDN）
         return new PresignedUpload(signed.url().toString(), key, expireAt);
     }
 
@@ -120,8 +121,7 @@ public class S3CompatibleStorageService implements ObjectStorageService {
                 .endpointOverride(URI.create(cfg.getEndpoint()))
                 .region(Region.of(cfg.getRegion()))
                 .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(cfg.getAccessKey(), cfg.getSecretKey())
-                ))
+                        AwsBasicCredentials.create(cfg.getAccessKey(), cfg.getSecretKey())))
                 .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(cfg.isPathStyle()).build())
                 .build();
     }
@@ -137,9 +137,30 @@ public class S3CompatibleStorageService implements ObjectStorageService {
             throw new BizException(BizCode.PARAM_INVALID, "文件大小超出限制");
         }
         List<String> allowedContentTypes = properties.getAllowedContentTypes();
-        if (allowedContentTypes != null && !allowedContentTypes.isEmpty() && !allowedContentTypes.contains(contentType)) {
+        if (allowedContentTypes != null && !allowedContentTypes.isEmpty()
+                && !allowedContentTypes.contains(contentType)) {
             throw new BizException(BizCode.PARAM_INVALID, "不支持的文件类型");
         }
+    }
+
+    /**
+     * 将源站签名 URL 的 host 替换为 CDN host（仅 GET 下载链接）。
+     * 按 DigitalOcean 官方文档：用非 CDN endpoint 生成签名，再把 hostname 换成 CDN hostname。
+     * 签名参数中的 host header 仍是源站，但 CDN 反代时会透传，签名依然有效。
+     */
+    private String toCdnUrl(String originUrl) {
+        String cdn = properties.getCdnEndpoint();
+        if (!StringUtils.hasText(cdn)) {
+            return originUrl;
+        }
+        String origin = properties.getEndpoint();
+        if (!StringUtils.hasText(origin)) {
+            return originUrl;
+        }
+        // 去掉末尾斜杠再替换，避免双斜杠
+        String normalizedOrigin = origin.endsWith("/") ? origin.substring(0, origin.length() - 1) : origin;
+        String normalizedCdn = cdn.endsWith("/") ? cdn.substring(0, cdn.length() - 1) : cdn;
+        return originUrl.replace(normalizedOrigin, normalizedCdn);
     }
 
     private boolean isHttpUrl(String value) {

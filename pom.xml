@@ -28,6 +28,9 @@
     </scm>
     <properties>
         <java.version>21</java.version>
+        <sentry.skip>true</sentry.skip>
+        <sentry.skipSourceBundle>true</sentry.skipSourceBundle>
+        <sentry.skipValidateSdkDependencyVersions>true</sentry.skipValidateSdkDependencyVersions>
     </properties>
     <dependencies>
         <dependency>
@@ -202,6 +205,9 @@
                     <authToken>${env.SENTRY_AUTH_TOKEN}</authToken>
                     <!-- Enable debugging to see logs in case something goes wrong when uploading the source bundle -->
                     <debugSentryCli>true</debugSentryCli>
+                    <skip>${sentry.skip}</skip>
+                    <skipSourceBundle>${sentry.skipSourceBundle}</skipSourceBundle>
+                    <skipValidateSdkDependencyVersions>${sentry.skipValidateSdkDependencyVersions}</skipValidateSdkDependencyVersions>
                 </configuration>
                 <executions>
                     <execution>

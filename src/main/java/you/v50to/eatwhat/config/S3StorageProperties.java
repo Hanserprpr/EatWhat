@@ -17,6 +17,7 @@ public class S3StorageProperties {
     private String accessKey;
     private String secretKey;
     private boolean pathStyle = true;
+    private String cdnEndpoint; // 可选，CDN 访问域名，如 https://sgp1.cdn.digitaloceanspaces.com
     private long signGetTtlSeconds = 600;
     private long signPutTtlSeconds = 300;
     private long maxFileSizeBytes = 5L * 1024 * 1024;
