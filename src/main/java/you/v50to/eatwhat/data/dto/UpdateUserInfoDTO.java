@@ -12,6 +12,18 @@ import java.time.LocalDate;
 public class UpdateUserInfoDTO {
 
     /**
+     * 昵称
+     */
+    @Size(min = 3, max = 10, message = "昵称长度必须在 3 到 10 个字符之间")
+    private String userName;
+
+    /**
+     * 头像（对象存储中的 key）
+     */
+    @Size(max = 255, message = "头像 key 不能超过 255 个字符")
+    private String avatar;
+
+    /**
      * 性别：male, female, other
      */
     @Pattern(regexp = "^(male|female|other)$", message = "性别只能是 male、female 或 other")

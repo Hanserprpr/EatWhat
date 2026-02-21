@@ -97,7 +97,7 @@ public class UserService {
     }
 
     /**
-     * 更新用户个人信息
+     * 更新用户个人信息（昵称、头像、性别、生日、签名、家乡）
      *
      * @param dto 更新数据
      * @return 更新结果
@@ -113,9 +113,21 @@ public class UserService {
             return validationResult;
         }
 
-        // 查询现有用户信息
-        UserInfo userInfo = userInfoMapper.selectById(userId);
+        // 更新 users 表中的昵称和头像（key）
+        if (dto.getUserName() != null || dto.getAvatar() != null) {
+            User user = new User();
+            user.setId(userId);
+            if (dto.getUserName() != null) {
+                user.setUserName(dto.getUserName());
+            }
+            if (dto.getAvatar() != null) {
+                user.setAvatar(dto.getAvatar());
+            }
+            userMapper.updateById(user);
+        }
 
+        // 更新 user_info 表
+        UserInfo userInfo = userInfoMapper.selectById(userId);
         if (userInfo == null) {
             // 首次填写，创建新记录
             userInfo = new UserInfo();
@@ -158,13 +170,13 @@ public class UserService {
     /**
      * 获取粉丝列表
      *
-     * @param userId 用户ID，不传则为当前用户
-     * @param page 页码（从1开始）
+     * @param userId   用户ID，不传则为当前用户
+     * @param page     页码（从1开始）
      * @param pageSize 每页大小
      * @return 粉丝列表
      */
     public Result<PageResult<FansDTO>> getFollowers(Long userId, Integer page, Integer pageSize) {
-        if (userId == null  || userId <= 0) {
+        if (userId == null || userId <= 0) {
             userId = StpUtil.getLoginIdAsLong();
         }
 
@@ -225,13 +237,13 @@ public class UserService {
     /**
      * 获取关注列表
      *
-     * @param userId 用户ID，不传则为当前用户
-     * @param page 页码（从1开始）
+     * @param userId   用户ID，不传则为当前用户
+     * @param page     页码（从1开始）
      * @param pageSize 每页大小
      * @return 关注列表
      */
     public Result<PageResult<FansDTO>> getFollowings(Long userId, Integer page, Integer pageSize) {
-        if (userId == null  || userId <= 0) {
+        if (userId == null || userId <= 0) {
             userId = StpUtil.getLoginIdAsLong();
         }
 
