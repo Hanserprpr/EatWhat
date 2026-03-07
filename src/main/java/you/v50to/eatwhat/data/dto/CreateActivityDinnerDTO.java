@@ -2,6 +2,7 @@ package you.v50to.eatwhat.data.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -15,5 +16,5 @@ public class CreateActivityDinnerDTO {
 
     @NotNull(message = "年夜饭图片不能为空")
     @Size(min = 1, max = 9, message = "年夜饭图片数量需在1-9张之间")
-    private List<@NotBlank(message = "图片链接不能为空") String> pictureUrl;
+    private List<@NotBlank(message = "图片链接不能为空") @Pattern(regexp = "^activity/.+", message = "图片必须是有效的 activity key，请传入 presign 返回的 key 字段而非 putUrl") String> pictureUrl;
 }
