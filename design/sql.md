@@ -202,11 +202,56 @@ GRANT ALL PRIVILEGES ON DATABASE eatwhat TO eatwhat_user;
 | follower    | boolean NOT NULL DEFAULT true        | 粉丝列表是否对外可见 |
 | created_at  | timestamptz NOT NULL DEFAULT now()   | 创建时间       |
 
+## Hub (聚合点)
+
+| 字段          | 类型                                   | 含义              |
+|-------------|--------------------------------------|-----------------|
+| id          | bigserial PRIMARY KEY                | 集合点ID           |
+| name        | text NOT NULL                        | 聚合点名称           |
+| center      | geometry(Point, 4326) NOT NULL       | 中心点坐标（WGS84经纬度） |
+| gcj_lng     | double precision NOT NULL            | 中心点 GCJ02 经度（直接返回前端） |
+| gcj_lat     | double precision NOT NULL            | 中心点 GCJ02 纬度（直接返回前端） |
+| boundary    | geometry(MultiPolygon, 4326)         | 边界范围（WGS84经纬度）  |
+| created_at  | timestamptz NOT NULL DEFAULT now()   | 创建时间            |
+| updated_at  | timestamptz NOT NULL DEFAULT now()   | 更新时间            |
+
+**依赖：**
+- 需要 PostGIS 扩展：`CREATE EXTENSION IF NOT EXISTS postgis;`
+
+**索引：**
+- `idx_hub_center` USING GIST ON (center) - 中心点空间索引
+- `idx_hub_boundary` USING GIST ON (boundary) - 边界空间索引
+
+## Restaurant（餐厅）
+
+| 字段              | 类型                                   | 含义                      |
+|-----------------|--------------------------------------|-------------------------|
+| id              | bigserial PRIMARY KEY                | 餐厅ID                    |
+| name            | text NOT NULL                        | 餐厅名称                    |
+| address         | text                                 | 地址描述                    |
+| location        | geography(Point, 4326) NOT NULL      | 坐标（WGS84，用于空间计算）        |
+| gcj_lng         | double precision NOT NULL            | GCJ02 经度（直接返回前端）        |
+| gcj_lat         | double precision NOT NULL            | GCJ02 纬度（直接返回前端）        |
+| mall_id         | bigint                               | 所属商场ID                  |
+| created_at      | timestamptz NOT NULL DEFAULT now()   | 创建时间                    |
+| updated_at      | timestamptz NOT NULL DEFAULT now()   | 更新时间                    |
+
+**说明：**
+- `location` 存储 WGS84 坐标，用于服务端空间计算（距离、范围查询等）
+- `gcj_lng` / `gcj_lat` 存储 GCJ02（火星坐标）冗余字段，直接返回给前端地图使用
+
+**索引：**
+- `idx_restaurant_location` USING GIST ON (location) - 空间索引（WGS84）
+- `idx_restaurant_mall` ON (mall_id) - 按商场查询
+
+
 ## 建表语句（PostgreSQL）
 
 ```postgresql
 -- PostgreSQL 使用 citext 做邮箱大小写不敏感唯一
 CREATE EXTENSION IF NOT EXISTS citext;
+-- PostGIS 空间扩展（Hub 表依赖）
+CREATE EXTENSION IF NOT EXISTS postgis;
 
 CREATE TABLE users (
   id            bigserial PRIMARY KEY,
@@ -398,7 +443,40 @@ CREATE TABLE privacy (
   UNIQUE(account_id)
 );
 
--- 索引
+CREATE TABLE hub (
+  id            bigserial PRIMARY KEY,
+  name          text                    NOT NULL,
+  center        geometry(Point, 4326)   NOT NULL,
+  gcj_lng       double precision        NOT NULL,
+  gcj_lat       double precision        NOT NULL,
+  boundary      geometry(MultiPolygon, 4326),
+  created_at    timestamptz             NOT NULL DEFAULT now(),
+  updated_at    timestamptz             NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_hub_center   ON hub USING GIST (center);
+CREATE INDEX idx_hub_boundary ON hub USING GIST (boundary);
+
+CREATE TRIGGER update_hub_updated_at BEFORE UPDATE ON hub
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TABLE restaurant (
+  id              bigserial PRIMARY KEY,
+  name            text                    NOT NULL,
+  address         text,
+  location        geography(Point, 4326)  NOT NULL,
+  gcj_lng         double precision        NOT NULL,
+  gcj_lat         double precision        NOT NULL,
+  mall_id         bigint,
+  created_at      timestamptz             NOT NULL DEFAULT now(),
+  updated_at      timestamptz             NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_restaurant_location ON restaurant USING GIST (location);
+CREATE INDEX idx_restaurant_mall ON restaurant (mall_id);
+
+CREATE TRIGGER update_restaurant_updated_at BEFORE UPDATE ON restaurant
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
 -- 触发器：自动维护点赞数缓存
@@ -463,4 +541,5 @@ CREATE TRIGGER update_likes_count_trigger
 
 ```postgresql
 CREATE EXTENSION IF NOT EXISTS citext;
+CREATE EXTENSION IF NOT EXISTS postgis;
 ```
